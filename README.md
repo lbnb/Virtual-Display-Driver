@@ -1,14 +1,16 @@
 # 🛠️ Virtual Display Driver Development Team
 
-| 👤 Developer          | 🏷️ Role                            | 💖 Support Us                                                                                                         |
-| --------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **[MikeTheTech](https://github.com/itsmikethetech)** | Project Manager, Lead Programmer | [Patreon](https://www.patreon.com/mikethetech) :gem: / [GitHub Sponsors](https://github.com/sponsors/itsmikethetech/) 💖  |
-| **[Jocke](https://github.com/zjoasan)**       | Programmer, Concept Design  | [GitHub Sponsors ](https://github.com/sponsors/zjoasan) 💖                                                             |
+
+| 👤 Developer                                         | 🏷️ Role                        | 💖 Support Us                                                                                                            |
+| ---------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **[MikeTheTech](https://github.com/itsmikethetech)** | Project Manager, Lead Programmer | [Patreon](https://www.patreon.com/mikethetech) :gem: / [GitHub Sponsors](https://github.com/sponsors/itsmikethetech/) 💖 |
+| **[Jocke](https://github.com/zjoasan)**              | Programmer, Concept Design       | [GitHub Sponsors ](https://github.com/sponsors/zjoasan) 💖                                                               |
 
 :bulb: *We appreciate your support—every contribution helps us keep building amazing experiences!*
 
 # <img src="https://github.com/user-attachments/assets/22ff37ba-a8ea-4b65-b7b2-e7fcb09d858b" height="32" width="32"></img> Virtual Display Driver
-This project creates a _virtual monitor_ in Windows that functions just like a physical display. It is particularly useful for applications such as **streaming, virtual reality, screen recording,** and **headless servers—systems** that operate without a physical display attached. 
+
+This project creates a _virtual monitor_ in Windows that functions just like a physical display. It is particularly useful for applications such as **streaming, virtual reality, screen recording,** and **headless servers—systems** that operate without a physical display attached.
 
 Unlike traditional monitors, this virtual display supports custom resolutions and refresh rates beyond hardware limitations—offering greater flexibility for advanced setups. You can also use custom EDIDs to simulate or emulate existing hardware displays.
 
@@ -18,23 +20,24 @@ Unlike traditional monitors, this virtual display supports custom resolutions an
 
 > [!IMPORTANT]
 > Before using the Virtual Display Driver, ensure the following dependencies are installed:
-> - **Microsoft Visual C++ Redistributable**  
+>
+> - **Microsoft Visual C++ Redistributable**
 >   If you encounter the error `vcruntime140.dll not found`, download and install the latest version from the [Microsoft Visual C++ Redistributable page](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170).
-
 
 ## 🛠️ Installation
 
 - Step 1: Download the Virtual Driver Control app.
-   - You can download the installer directly from the [Releases](https://github.com/VirtualDisplay/Virtual-Display-Driver/releases) page.
 
+  - You can download the installer directly from the [Releases](https://github.com/VirtualDisplay/Virtual-Display-Driver/releases) page.
 - Step 2: Extract to a folder and run the app
-   - Launch the VDC.
-   - Click the Install button.
 
+  - Launch the VDC.
+  - Click the Install button.
 - Step 3: Verify the Installation (Optional)
-   - Check if the Virtual Display Driver is correctly installed by running the following:
-   - **Device Manager:** Check "Device Manager" under "Display Adapters."
-   - **Settings:** Check display settings under system settings and see if the virtual displays show.
+
+  - Check if the Virtual Display Driver is correctly installed by running the following:
+  - **Device Manager:** Check "Device Manager" under "Display Adapters."
+  - **Settings:** Check display settings under system settings and see if the virtual displays show.
 
 Manual installation can be found in the wiki
 
@@ -47,7 +50,7 @@ projects.
 
 ¹ ARM64 Support in Windows 11 24H2 or later may require test signing be enabled.
 
-HDR Support Now Available for Windows 11 23H2+ 
+HDR Support Now Available for Windows 11 23H2+
 
 ## ▶️ Videos and Tutorials
 
@@ -82,7 +85,7 @@ HDR Support Now Available for Windows 11 23H2+
 - Shoutout to **[Anakngtokwa](https://github.com/Anakngtokwa)** for assisting with finding driver sources.
 - **[Microsoft](https://github.com/microsoft/Windows-driver-samples/tree/master/video/IndirectDisplay)** Indirect Display Driver/Sample (Driver code)
 - Thanks to **[AKATrevorJay](https://github.com/akatrevorjay/edid-generator)** for the hi-res EDID.
-- Shoutout to **[LexTrack](https://github.com/lextrack/)** for the MiniScreenRecorder script. 
+- Shoutout to **[LexTrack](https://github.com/lextrack/)** for the MiniScreenRecorder script.
 
 ## Star History
 

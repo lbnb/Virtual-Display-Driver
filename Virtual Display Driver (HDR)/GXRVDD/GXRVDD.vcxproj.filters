@@ -19,7 +19,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="MttVDD.inf">
+    <Inf Include="GXRVDD.inf">
       <Filter>Driver Files</Filter>
     </Inf>
   </ItemGroup>

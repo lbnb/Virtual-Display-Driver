@@ -14,11 +14,11 @@ Environment:
 
 #include "Driver.h"
 //#include "Driver.tmh"
-#include<fstream>
-#include<sstream>
-#include<string>
-#include<tuple>
-#include<vector>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <vector>
 #include <AdapterOption.h>
 #include <xmllite.h>
 #include <shlwapi.h>
@@ -36,12 +36,11 @@ Environment:
 #include <cwchar>
 #include <map>
 #include <set>
+#include <iddcx.h>
+#include <wdfdriver.h>
+#include "GRTWTrace.h"
 
-
-
-
-
-#define PIPE_NAME L"\\\\.\\pipe\\MTTVirtualDisplayPipe"
+#define PIPE_NAME L"\\\\.\\pipe\\GXRVirtualDisplayPipe"
 
 #pragma comment(lib, "xmllite.lib")
 #pragma comment(lib, "shlwapi.lib")
@@ -88,8 +87,8 @@ vector<tuple<int, int, int, int>> monitorModes;
 vector< DISPLAYCONFIG_VIDEO_SIGNAL_INFO> s_KnownMonitorModes2;
 UINT numVirtualDisplays;
 wstring gpuname;
-wstring confpath = L"C:\\VirtualDisplayDriver";
-bool logsEnabled = false;
+wstring confpath = L"C:\\GXRVDisplayDriver";
+bool logsEnabled = true;
 bool debugLogs = false;
 bool HDRPlus = false;
 bool SDR10 = false;
@@ -162,6 +161,7 @@ struct IndirectDeviceContextWrapper
 		pContext = nullptr;
 	}
 };
+
 void LogQueries(const char* severity, const std::wstring& xmlName) {
 	if (xmlName.find(L"logging") == std::wstring::npos) { 
 		int size_needed = WideCharToMultiByte(CP_UTF8, 0, xmlName.c_str(), (int)xmlName.size(), NULL, 0, NULL, NULL);
@@ -458,6 +458,7 @@ void float_to_vsync(float refresh_rate, int& num, int& den) {
 }
 
 void  SendToPipe(const std::string& logMessage) {
+	AUTO_TRACE_CALL();
 	if (g_pipeHandle != INVALID_HANDLE_VALUE) {
 		DWORD bytesWritten;
 		DWORD logMessageSize = static_cast<DWORD>(logMessage.size());
@@ -577,6 +578,7 @@ void LogIddCxVersion() {
 }
 
 void InitializeD3DDeviceAndLogGPU() {
+	AUTO_TRACE_CALL();
 	ComPtr<ID3D11Device> d3dDevice;
 	ComPtr<ID3D11DeviceContext> d3dContext;
 	HRESULT hr = D3D11CreateDevice(
@@ -998,6 +1000,7 @@ LUID getSetAdapterLuid() {
 
 void GetGpuInfo()
 {
+	AUTO_TRACE_CALL();
 	AdapterOption& adapterOption = Options.Adapter;
 
 	if (!adapterOption.hasTargetAdapter) {
@@ -1018,6 +1021,7 @@ void GetGpuInfo()
 }
 
 void logAvailableGPUs() {
+	AUTO_TRACE_CALL();
 	vector<GPUInfo> gpus;
 	ComPtr<IDXGIFactory1> factory;
 	if (!SUCCEEDED(CreateDXGIFactory1(IID_PPV_ARGS(&factory)))) {
@@ -1055,6 +1059,7 @@ void logAvailableGPUs() {
 
 
 void ReloadDriver(HANDLE hPipe) {
+	AUTO_TRACE_CALL();
 	auto* pContext = WdfObjectGet_IndirectDeviceContextWrapper(hPipe);
 	if (pContext && pContext->pContext) {
 		pContext->pContext->InitAdapter();
@@ -1064,6 +1069,7 @@ void ReloadDriver(HANDLE hPipe) {
 
 
 void HandleClient(HANDLE hPipe) {
+	AUTO_TRACE_CALL();
 	g_pipeHandle = hPipe;
 	vddlog("p", "Client Handling Enabled");
 	wchar_t buffer[128];
@@ -1275,6 +1281,7 @@ void HandleClient(HANDLE hPipe) {
 
 
 DWORD WINAPI NamedPipeServer(LPVOID lpParam) {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(lpParam);
 
 	SECURITY_ATTRIBUTES sa;
@@ -1322,6 +1329,7 @@ DWORD WINAPI NamedPipeServer(LPVOID lpParam) {
 }
 
 void StartNamedPipeServer() {
+	AUTO_TRACE_CALL();
 	vddlog("p", "Starting Pipe");
 	hPipeThread = CreateThread(NULL, 0, NamedPipeServer, NULL, 0, NULL);
 	if (hPipeThread == NULL) {
@@ -1335,6 +1343,7 @@ void StartNamedPipeServer() {
 }
 
 void StopNamedPipeServer() {
+	AUTO_TRACE_CALL();
 	vddlog("p", "Stopping Pipe");
 	{
 		lock_guard<mutex> lock(g_Mutex);
@@ -1363,6 +1372,7 @@ void StopNamedPipeServer() {
 }
 
 bool initpath() {
+	AUTO_TRACE_CALL();
 	HKEY hKey;
 	wchar_t szPath[MAX_PATH];
 	DWORD dwBufferSize = sizeof(szPath);
@@ -1400,6 +1410,7 @@ EvtDriverUnload(
 	_In_ WDFDRIVER Driver
 )
 {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(Driver);
 	StopNamedPipeServer();
 	vddlog("i", "Driver Unloaded");
@@ -1411,6 +1422,7 @@ extern "C" NTSTATUS DriverEntry(
 	PUNICODE_STRING pRegistryPath
 )
 {
+	AUTO_TRACE_CALL();
 	WDF_DRIVER_CONFIG Config;
 	NTSTATUS Status;
 
@@ -1490,6 +1502,7 @@ vector<string> split(string& input, char delimiter)
 
 
 void loadSettings() {
+	AUTO_TRACE_CALL();
 	const wstring settingsname = confpath + L"\\vdd_settings.xml";
 	const wstring& filename = settingsname;
 	if (PathFileExistsW(filename.c_str())) {
@@ -1551,20 +1564,20 @@ void loadSettings() {
 				else if (currentElement == L"width") {
 					width = wstring(pwszValue, cwchValue);
 					if (width.empty()) {
-						width = L"800";
+						width = L"1920";
 					}
 				}
 				else if (currentElement == L"height") {
 					height = wstring(pwszValue, cwchValue);
 					if (height.empty()) {
-						height = L"600";
+						height = L"1080";
 					}
 					resolutions.insert(make_tuple(stoi(width), stoi(height)));
 				}
 				else if (currentElement == L"refresh_rate") {
 					refreshRate = wstring(pwszValue, cwchValue);
 					if (refreshRate.empty()) {
-						refreshRate = L"30";
+						refreshRate = L"45";
 					}
 					int vsync_num, vsync_den;
 					float_to_vsync(stof(refreshRate), vsync_num, vsync_den);
@@ -1667,42 +1680,7 @@ void loadSettings() {
 	numVirtualDisplays = 1;
 	vector<tuple<int, int, int, int>> res;
 	vector<tuple<int, int, float>> fallbackRes = {
-		{800, 600, 30.0f},
-		{800, 600, 60.0f},
-		{800, 600, 90.0f},
-		{800, 600, 120.0f},
-		{800, 600, 144.0f},
-		{800, 600, 165.0f},
-		{1280, 720, 30.0f},
-		{1280, 720, 60.0f},
-		{1280, 720, 90.0f},
-		{1280, 720, 130.0f},
-		{1280, 720, 144.0f},
-		{1280, 720, 165.0f},
-		{1366, 768, 30.0f},
-		{1366, 768, 60.0f},
-		{1366, 768, 90.0f},
-		{1366, 768, 120.0f},
-		{1366, 768, 144.0f},
-		{1366, 768, 165.0f},
-		{1920, 1080, 30.0f},
-		{1920, 1080, 60.0f},
-		{1920, 1080, 90.0f},
-		{1920, 1080, 120.0f},
-		{1920, 1080, 144.0f},
-		{1920, 1080, 165.0f},
-		{2560, 1440, 30.0f},
-		{2560, 1440, 60.0f},
-		{2560, 1440, 90.0f},
-		{2560, 1440, 120.0f},
-		{2560, 1440, 144.0f},
-		{2560, 1440, 165.0f},
-		{3840, 2160, 30.0f},
-		{3840, 2160, 60.0f},
-		{3840, 2160, 90.0f},
-		{3840, 2160, 120.0f},
-		{3840, 2160, 144.0f},
-		{3840, 2160, 165.0f}
+		{1920, 1080, 45.0f},
 	};
 
 	vddlog("i", "Loading Fallback - no settings found");
@@ -1731,6 +1709,7 @@ void loadSettings() {
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverDeviceAdd(WDFDRIVER Driver, PWDFDEVICE_INIT pDeviceInit)
 {
+	AUTO_TRACE_CALL();
 	NTSTATUS Status = STATUS_SUCCESS;
 	WDF_PNPPOWER_EVENT_CALLBACKS PnpPowerCallbacks;
 	stringstream logStream;
@@ -1870,7 +1849,7 @@ _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverDeviceD0Entry(WDFDEVICE Device, WDF_POWER_DEVICE_STATE PreviousState)
 {
 	//UNREFERENCED_PARAMETER(PreviousState);
-
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 
 	// Log the entry into D0 state
@@ -1923,6 +1902,7 @@ Direct3DDevice::Direct3DDevice()
 
 HRESULT Direct3DDevice::Init()
 {
+	AUTO_TRACE_CALL();
 	HRESULT hr;
 	stringstream logStream;
 
@@ -2006,6 +1986,7 @@ HRESULT Direct3DDevice::Init()
 SwapChainProcessor::SwapChainProcessor(IDDCX_SWAPCHAIN hSwapChain, shared_ptr<Direct3DDevice> Device, HANDLE NewFrameEvent)
 	: m_hSwapChain(hSwapChain), m_Device(Device), m_hAvailableBufferEvent(NewFrameEvent)
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 
 	logStream << "Constructing SwapChainProcessor:"
@@ -2046,6 +2027,7 @@ SwapChainProcessor::SwapChainProcessor(IDDCX_SWAPCHAIN hSwapChain, shared_ptr<Di
 
 SwapChainProcessor::~SwapChainProcessor()
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 
 	logStream << "Destructing SwapChainProcessor:";
@@ -2105,6 +2087,7 @@ SwapChainProcessor::~SwapChainProcessor()
 
 DWORD CALLBACK SwapChainProcessor::RunThread(LPVOID Argument)
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 
 	logStream << "RunThread started. Argument: " << Argument;
@@ -2116,6 +2099,7 @@ DWORD CALLBACK SwapChainProcessor::RunThread(LPVOID Argument)
 
 void SwapChainProcessor::Run()
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 
 	logStream << "Run method started.";
@@ -2184,6 +2168,7 @@ void SwapChainProcessor::Run()
 
 void SwapChainProcessor::RunCore()
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 
 	// Get the DXGI device interface
@@ -2475,6 +2460,7 @@ IndirectDeviceContext::~IndirectDeviceContext()
 
 void IndirectDeviceContext::InitAdapter()
 {
+	AUTO_TRACE_CALL();
 	maincalc();
 	stringstream logStream;
 
@@ -2564,6 +2550,7 @@ void IndirectDeviceContext::InitAdapter()
 
 void IndirectDeviceContext::FinishInit()
 {
+	AUTO_TRACE_CALL();
 	Options.Adapter.apply(m_Adapter);
 	vddlog("i", "Applied Adapter configs.");
 	for (unsigned int i = 0; i < numVirtualDisplays; i++) {
@@ -2572,6 +2559,7 @@ void IndirectDeviceContext::FinishInit()
 }
 
 void IndirectDeviceContext::CreateMonitor(unsigned int index) {
+	AUTO_TRACE_CALL();
 	wstring logMessage = L"Creating Monitor: " + to_wstring(index + 1);
 	string narrowLogMessage = WStringToString(logMessage);
 	vddlog("i", narrowLogMessage.c_str());
@@ -2665,6 +2653,7 @@ void IndirectDeviceContext::CreateMonitor(unsigned int index) {
 
 void IndirectDeviceContext::AssignSwapChain(IDDCX_MONITOR& Monitor, IDDCX_SWAPCHAIN SwapChain, LUID RenderAdapter, HANDLE NewFrameEvent)
 {
+	AUTO_TRACE_CALL();
 	m_ProcessingThread.reset();
 
 	auto Device = make_shared<Direct3DDevice>(RenderAdapter);
@@ -2737,6 +2726,7 @@ void IndirectDeviceContext::AssignSwapChain(IDDCX_MONITOR& Monitor, IDDCX_SWAPCH
 
 void IndirectDeviceContext::UnassignSwapChain()
 {
+	AUTO_TRACE_CALL();
 	// Stop processing the last swap-chain
 	vddlog("i", "Unasigning Swapchain. Processing will be stopped.");
 	m_ProcessingThread.reset();
@@ -2749,6 +2739,7 @@ void IndirectDeviceContext::UnassignSwapChain()
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverAdapterInitFinished(IDDCX_ADAPTER AdapterObject, const IDARG_IN_ADAPTER_INIT_FINISHED* pInArgs)
 {
+	AUTO_TRACE_CALL();
 	// This is called when the OS has finished setting up the adapter for use by the IddCx driver. It's now possible
 	// to report attached monitors.
 
@@ -2773,6 +2764,7 @@ NTSTATUS VirtualDisplayDriverAdapterInitFinished(IDDCX_ADAPTER AdapterObject, co
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverAdapterCommitModes(IDDCX_ADAPTER AdapterObject, const IDARG_IN_COMMITMODES* pInArgs)
 {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(AdapterObject);
 	UNREFERENCED_PARAMETER(pInArgs);
 
@@ -2789,6 +2781,7 @@ NTSTATUS VirtualDisplayDriverAdapterCommitModes(IDDCX_ADAPTER AdapterObject, con
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverParseMonitorDescription(const IDARG_IN_PARSEMONITORDESCRIPTION* pInArgs, IDARG_OUT_PARSEMONITORDESCRIPTION* pOutArgs)
 {
+	AUTO_TRACE_CALL();
 	// ==============================
 	// TODO: In a real driver, this function would be called to generate monitor modes for an EDID by parsing it. In
 	// this sample driver, we hard-code the EDID, so this function can generate known modes.
@@ -2835,6 +2828,7 @@ NTSTATUS VirtualDisplayDriverParseMonitorDescription(const IDARG_IN_PARSEMONITOR
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverMonitorGetDefaultModes(IDDCX_MONITOR MonitorObject, const IDARG_IN_GETDEFAULTDESCRIPTIONMODES* pInArgs, IDARG_OUT_GETDEFAULTDESCRIPTIONMODES* pOutArgs)
 {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(MonitorObject);
 	UNREFERENCED_PARAMETER(pInArgs);
 	UNREFERENCED_PARAMETER(pOutArgs);
@@ -2856,6 +2850,7 @@ NTSTATUS VirtualDisplayDriverMonitorGetDefaultModes(IDDCX_MONITOR MonitorObject,
 /// </summary>
 void CreateTargetMode(DISPLAYCONFIG_VIDEO_SIGNAL_INFO& Mode, UINT Width, UINT Height, UINT VSyncNum, UINT VSyncDen)
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 	logStream << "Creating target mode with Width: " << Width
 		<< ", Height: " << Height
@@ -2887,12 +2882,14 @@ void CreateTargetMode(DISPLAYCONFIG_VIDEO_SIGNAL_INFO& Mode, UINT Width, UINT He
 
 void CreateTargetMode(IDDCX_TARGET_MODE& Mode, UINT Width, UINT Height, UINT VSyncNum, UINT VSyncDen)
 {
+	AUTO_TRACE_CALL();
 	Mode.Size = sizeof(Mode);
 	CreateTargetMode(Mode.TargetVideoSignalInfo.targetVideoSignalInfo, Width, Height, VSyncNum, VSyncDen);
 }
 
 void CreateTargetMode2(IDDCX_TARGET_MODE2& Mode, UINT Width, UINT Height, UINT VSyncNum, UINT VSyncDen)
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 	logStream << "Creating IDDCX_TARGET_MODE2 with Width: " << Width
 		<< ", Height: " << Height
@@ -2932,6 +2929,7 @@ void CreateTargetMode2(IDDCX_TARGET_MODE2& Mode, UINT Width, UINT Height, UINT V
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverMonitorQueryModes(IDDCX_MONITOR MonitorObject, const IDARG_IN_QUERYTARGETMODES* pInArgs, IDARG_OUT_QUERYTARGETMODES* pOutArgs)////////////////////////////////////////////////////////////////////////////////
 {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(MonitorObject);
 
 	vector<IDDCX_TARGET_MODE> TargetModes(monitorModes.size());
@@ -2980,6 +2978,7 @@ NTSTATUS VirtualDisplayDriverMonitorQueryModes(IDDCX_MONITOR MonitorObject, cons
 _Use_decl_annotations_
 NTSTATUS VirtualDisplayDriverMonitorAssignSwapChain(IDDCX_MONITOR MonitorObject, const IDARG_IN_SETSWAPCHAIN* pInArgs)
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 	logStream << "Assigning swap chain:"
 		<< "\n  hSwapChain: " << pInArgs->hSwapChain
@@ -3011,6 +3010,7 @@ NTSTATUS VirtualDisplayDriverEvtIddCxAdapterQueryTargetInfo(
 	IDARG_OUT_QUERYTARGET_INFO* pOutArgs
 )
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 	logStream << "Querying target info for adapter object: " << AdapterObject;
 	vddlog("d", logStream.str().c_str());
@@ -3049,6 +3049,7 @@ NTSTATUS VirtualDisplayDriverEvtIddCxMonitorSetDefaultHdrMetadata(
 	const IDARG_IN_MONITOR_SET_DEFAULT_HDR_METADATA* pInArgs
 )
 {
+	AUTO_TRACE_CALL();
 	stringstream logStream;
 	logStream << "Setting default HDR metadata for monitor object: " << MonitorObject;
 	vddlog("d", logStream.str().c_str());
@@ -3066,6 +3067,7 @@ NTSTATUS VirtualDisplayDriverEvtIddCxParseMonitorDescription2(
 	IDARG_OUT_PARSEMONITORDESCRIPTION* pOutArgs
 )
 {
+	AUTO_TRACE_CALL();
 	// ==============================
 	// TODO: In a real driver, this function would be called to generate monitor modes for an EDID by parsing it. In
 	// this sample driver, we hard-code the EDID, so this function can generate known modes.
@@ -3111,7 +3113,6 @@ NTSTATUS VirtualDisplayDriverEvtIddCxParseMonitorDescription2(
 
 			if (ColourFormat == L"RGB") {
 				pInArgs->pMonitorModes[ModeIndex].BitsPerComponent.Rgb = SDRCOLOUR | HDRCOLOUR;
-				
 			}
 			else if (ColourFormat == L"YCbCr444") {
 				pInArgs->pMonitorModes[ModeIndex].BitsPerComponent.YCbCr444 = SDRCOLOUR | HDRCOLOUR;
@@ -3150,6 +3151,7 @@ NTSTATUS VirtualDisplayDriverEvtIddCxMonitorQueryTargetModes2(
 	IDARG_OUT_QUERYTARGETMODES* pOutArgs
 )
 {
+	AUTO_TRACE_CALL();
 	//UNREFERENCED_PARAMETER(MonitorObject);
 	stringstream logStream;
 
@@ -3210,6 +3212,7 @@ NTSTATUS VirtualDisplayDriverEvtIddCxAdapterCommitModes2(
 	const IDARG_IN_COMMITMODES2* pInArgs
 )
 {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(AdapterObject);
 	UNREFERENCED_PARAMETER(pInArgs);
 
@@ -3222,6 +3225,7 @@ NTSTATUS VirtualDisplayDriverEvtIddCxMonitorSetGammaRamp(
 	const IDARG_IN_SET_GAMMARAMP* pInArgs
 )
 {
+	AUTO_TRACE_CALL();
 	UNREFERENCED_PARAMETER(MonitorObject);
 	UNREFERENCED_PARAMETER(pInArgs);
 
